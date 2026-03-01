@@ -1,11 +1,21 @@
 import { Link } from "react-router-dom";
-import { ShoppingCart, Star } from "lucide-react";
+import { ShoppingCart, Star, Check } from "lucide-react";
+import { useState } from "react";
 import { Product, formatPrice } from "@/data/products";
 import { useCart } from "@/context/CartContext";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 const ProductCard = ({ product, index = 0 }: { product: Product; index?: number }) => {
   const { addToCart } = useCart();
+  const [added, setAdded] = useState(false);
+
+  const handleAdd = () => {
+    addToCart(product);
+    setAdded(true);
+    toast.success(`"${product.name}" savatchaga qo'shildi!`);
+    setTimeout(() => setAdded(false), 1200);
+  };
 
   return (
     <motion.div
@@ -68,10 +78,24 @@ const ProductCard = ({ product, index = 0 }: { product: Product; index?: number 
             )}
           </div>
           <button
-            onClick={() => addToCart(product)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-opacity hover:opacity-90"
+            onClick={handleAdd}
+            className={`flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300 ${
+              added
+                ? "bg-fresh text-primary-foreground scale-110"
+                : "bg-primary text-primary-foreground hover:opacity-90"
+            }`}
           >
-            <ShoppingCart size={16} />
+            <AnimatePresence mode="wait">
+              {added ? (
+                <motion.span key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                  <Check size={16} />
+                </motion.span>
+              ) : (
+                <motion.span key="cart" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                  <ShoppingCart size={16} />
+                </motion.span>
+              )}
+            </AnimatePresence>
           </button>
         </div>
       </div>

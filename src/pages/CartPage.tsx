@@ -128,9 +128,12 @@ const CartPage = () => {
                 </div>
               </div>
 
-              <button className="flex h-12 w-full items-center justify-center rounded-xl bg-primary font-display text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90">
-                Buyurtma berish
-              </button>
+              <Link
+                to="/checkout"
+                className="flex h-12 w-full items-center justify-center rounded-xl bg-primary font-display text-sm font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
+              >
+                Buyurtmani rasmiylashtirish
+              </Link>
 
               <button
                 onClick={clearCart}
