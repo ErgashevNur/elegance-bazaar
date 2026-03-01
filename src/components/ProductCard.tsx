@@ -1,16 +1,31 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, Star, Check } from "lucide-react";
 import { useState } from "react";
 import { Product, formatPrice } from "@/data/products";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
 const ProductCard = ({ product, index = 0 }: { product: Product; index?: number }) => {
-  const { addToCart } = useCart();
+  const { addToCart, getItemQuantity } = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [added, setAdded] = useState(false);
 
+  const currentQty = getItemQuantity(product.id);
+  const isMaxStock = currentQty >= product.stock;
+
   const handleAdd = () => {
+    if (!user) {
+      toast.error("Buyurtma berish uchun tizimga kiring");
+      navigate("/login", { state: { from: `/product/${product.id}` } });
+      return;
+    }
+    if (isMaxStock) {
+      toast.error(`Omborda faqat ${product.stock} dona mavjud`);
+      return;
+    }
     addToCart(product);
     setAdded(true);
     toast.success(`"${product.name}" savatchaga qo'shildi!`);
@@ -65,6 +80,11 @@ const ProductCard = ({ product, index = 0 }: { product: Product; index?: number 
           <span className="text-xs text-muted-foreground">({product.reviews})</span>
         </div>
 
+        {/* Stock info */}
+        {product.stock <= 5 && product.stock > 0 && (
+          <p className="mb-2 text-xs font-medium text-sale">Faqat {product.stock} dona qoldi!</p>
+        )}
+
         {/* Price + Cart */}
         <div className="flex items-end justify-between">
           <div>
@@ -79,8 +99,11 @@ const ProductCard = ({ product, index = 0 }: { product: Product; index?: number 
           </div>
           <button
             onClick={handleAdd}
+            disabled={isMaxStock}
             className={`flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-300 ${
-              added
+              isMaxStock
+                ? "bg-muted text-muted-foreground cursor-not-allowed"
+                : added
                 ? "bg-fresh text-primary-foreground scale-110"
                 : "bg-primary text-primary-foreground hover:opacity-90"
             }`}
