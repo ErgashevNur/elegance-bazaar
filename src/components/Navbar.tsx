@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { ShoppingCart, Search, Menu, X, User } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ShoppingCart, Search, Menu, X, User, LogOut } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navLinks = [
@@ -12,9 +13,18 @@ const navLinks = [
 
 const Navbar = () => {
   const { totalItems } = useCart();
+  const { user, signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const handleSignOut = async () => {
+    await signOut();
+    setProfileOpen(false);
+    navigate("/");
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
@@ -71,10 +81,53 @@ const Navbar = () => {
             )}
           </Link>
 
-          <button className="hidden h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 md:flex">
-            <User size={16} />
-            Kirish
-          </button>
+          {user ? (
+            <div className="relative">
+              <button
+                onClick={() => setProfileOpen(!profileOpen)}
+                className="flex h-10 items-center gap-2 rounded-lg bg-muted px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted/80"
+              >
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt="" className="h-6 w-6 rounded-full" />
+                ) : (
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                    {(user.displayName || user.email || "U")[0].toUpperCase()}
+                  </div>
+                )}
+                <span className="hidden max-w-[100px] truncate md:inline">
+                  {user.displayName || user.email?.split("@")[0]}
+                </span>
+              </button>
+
+              <AnimatePresence>
+                {profileOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 5 }}
+                    className="absolute right-0 top-12 w-48 rounded-xl border border-border bg-card p-2 shadow-lg"
+                  >
+                    <p className="px-3 py-2 text-xs text-muted-foreground truncate">{user.email}</p>
+                    <button
+                      onClick={handleSignOut}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10"
+                    >
+                      <LogOut size={14} />
+                      Chiqish
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="hidden h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 md:flex"
+            >
+              <User size={16} />
+              Kirish
+            </Link>
+          )}
 
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -96,10 +149,7 @@ const Navbar = () => {
           >
             <div className="container mx-auto px-4 py-3">
               <div className="relative">
-                <Search
-                  size={18}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                />
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Mahsulotlarni qidiring..."
@@ -136,10 +186,16 @@ const Navbar = () => {
                   {link.label}
                 </Link>
               ))}
-              <button className="mt-2 flex h-10 items-center justify-center gap-2 rounded-lg bg-primary text-sm font-medium text-primary-foreground">
-                <User size={16} />
-                Kirish
-              </button>
+              {!user && (
+                <Link
+                  to="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="mt-2 flex h-10 items-center justify-center gap-2 rounded-lg bg-primary text-sm font-medium text-primary-foreground"
+                >
+                  <User size={16} />
+                  Kirish
+                </Link>
+              )}
             </nav>
           </motion.div>
         )}

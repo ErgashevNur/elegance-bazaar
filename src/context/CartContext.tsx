@@ -12,6 +12,7 @@ interface CartContextType {
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
+  getItemQuantity: (productId: string) => number;
   totalItems: number;
   totalPrice: number;
 }
@@ -25,12 +26,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setItems((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
+        // Stock limitni tekshirish
+        if (existing.quantity >= product.stock) return prev;
         return prev.map((item) =>
           item.product.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
+      if (product.stock <= 0) return prev;
       return [...prev, { product, quantity: 1 }];
     });
   };
@@ -45,10 +49,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     setItems((prev) =>
-      prev.map((item) =>
-        item.product.id === productId ? { ...item, quantity } : item
-      )
+      prev.map((item) => {
+        if (item.product.id === productId) {
+          // Stock limitdan oshmasin
+          const clampedQty = Math.min(quantity, item.product.stock);
+          return { ...item, quantity: clampedQty };
+        }
+        return item;
+      })
     );
+  };
+
+  const getItemQuantity = (productId: string) => {
+    const item = items.find((i) => i.product.id === productId);
+    return item ? item.quantity : 0;
   };
 
   const clearCart = () => setItems([]);
@@ -61,7 +75,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <CartContext.Provider
-      value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice }}
+      value={{ items, addToCart, removeFromCart, updateQuantity, clearCart, getItemQuantity, totalItems, totalPrice }}
     >
       {children}
     </CartContext.Provider>

@@ -1,12 +1,15 @@
 import { Link } from "react-router-dom";
-import { Trash2, Minus, Plus, ArrowLeft, ShoppingBag } from "lucide-react";
+import { Trash2, Minus, Plus, ArrowLeft, ShoppingBag, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { formatPrice } from "@/data/products";
 import Layout from "@/components/Layout";
+import { toast } from "sonner";
 
 const CartPage = () => {
   const { items, removeFromCart, updateQuantity, totalPrice, clearCart } = useCart();
+  const { user } = useAuth();
 
   if (items.length === 0) {
     return (
@@ -29,6 +32,14 @@ const CartPage = () => {
       </Layout>
     );
   }
+
+  const handleQuantityChange = (productId: string, newQty: number, stock: number) => {
+    if (newQty > stock) {
+      toast.error(`Omborda faqat ${stock} dona mavjud`);
+      return;
+    }
+    updateQuantity(productId, newQty);
+  };
 
   return (
     <Layout>
@@ -68,12 +79,18 @@ const CartPage = () => {
                         </h3>
                       </Link>
                       <p className="text-xs text-muted-foreground">{item.product.seller}</p>
+                      {item.quantity >= item.product.stock && (
+                        <p className="mt-1 flex items-center gap-1 text-xs font-medium text-sale">
+                          <AlertTriangle size={12} />
+                          Maksimal miqdor
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 rounded-lg border border-border px-1">
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          onClick={() => handleQuantityChange(item.product.id, item.quantity - 1, item.product.stock)}
                           className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground"
                         >
                           <Minus size={14} />
@@ -82,8 +99,9 @@ const CartPage = () => {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                          className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground"
+                          onClick={() => handleQuantityChange(item.product.id, item.quantity + 1, item.product.stock)}
+                          disabled={item.quantity >= item.product.stock}
+                          className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                           <Plus size={14} />
                         </button>
@@ -128,12 +146,22 @@ const CartPage = () => {
                 </div>
               </div>
 
-              <Link
-                to="/checkout"
-                className="flex h-12 w-full items-center justify-center rounded-xl bg-primary font-display text-sm font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
-              >
-                Buyurtmani rasmiylashtirish
-              </Link>
+              {user ? (
+                <Link
+                  to="/checkout"
+                  className="flex h-12 w-full items-center justify-center rounded-xl bg-primary font-display text-sm font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
+                >
+                  Buyurtmani rasmiylashtirish
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  state={{ from: "/checkout" }}
+                  className="flex h-12 w-full items-center justify-center rounded-xl bg-primary font-display text-sm font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
+                >
+                  Kirish va buyurtma berish
+                </Link>
+              )}
 
               <button
                 onClick={clearCart}

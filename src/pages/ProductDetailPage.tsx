@@ -1,17 +1,20 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ShoppingCart, Star, Truck, Shield, Minus, Plus, Check } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { products, formatPrice } from "@/data/products";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import Layout from "@/components/Layout";
 import ProductCard from "@/components/ProductCard";
 
 const ProductDetailPage = () => {
   const { id } = useParams();
   const product = products.find((p) => p.id === id);
-  const { addToCart } = useCart();
+  const { addToCart, getItemQuantity } = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
@@ -30,8 +33,19 @@ const ProductDetailPage = () => {
   }
 
   const related = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
+  const currentInCart = getItemQuantity(product.id);
+  const maxCanAdd = product.stock - currentInCart;
 
   const handleAddToCart = () => {
+    if (!user) {
+      toast.error("Buyurtma berish uchun tizimga kiring");
+      navigate("/login", { state: { from: `/product/${product.id}` } });
+      return;
+    }
+    if (quantity > maxCanAdd) {
+      toast.error(`Omborda faqat ${product.stock} dona mavjud (savatchada: ${currentInCart})`);
+      return;
+    }
     for (let i = 0; i < quantity; i++) {
       addToCart(product);
     }
@@ -43,7 +57,6 @@ const ProductDetailPage = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
         <Link to="/products" className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft size={16} />
           Mahsulotlarga qaytish
@@ -107,11 +120,16 @@ const ProductDetailPage = () => {
             <p className="mb-6 leading-relaxed text-muted-foreground">{product.description}</p>
 
             {/* Stock */}
-            <p className="mb-6 text-sm">
+            <div className="mb-6 text-sm">
               <span className={product.stock > 0 ? "text-fresh" : "text-sale"}>
                 {product.stock > 0 ? `✓ Mavjud (${product.stock} dona)` : "✗ Tugagan"}
               </span>
-            </p>
+              {currentInCart > 0 && (
+                <span className="ml-3 text-muted-foreground">
+                  Savatchada: {currentInCart} dona
+                </span>
+              )}
+            </div>
 
             {/* Quantity + Add to Cart */}
             <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -124,7 +142,7 @@ const ProductDetailPage = () => {
                 </button>
                 <span className="w-8 text-center font-display font-semibold text-foreground">{quantity}</span>
                 <button
-                  onClick={() => setQuantity(quantity + 1)}
+                  onClick={() => setQuantity(Math.min(quantity + 1, maxCanAdd > 0 ? maxCanAdd : 1))}
                   className="flex h-10 w-10 items-center justify-center text-muted-foreground hover:text-foreground"
                 >
                   <Plus size={16} />
@@ -133,11 +151,18 @@ const ProductDetailPage = () => {
 
               <button
                 onClick={handleAddToCart}
+                disabled={maxCanAdd <= 0 && !!user}
                 className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-xl font-display text-sm font-bold text-primary-foreground transition-all duration-300 ${
-                  added ? "bg-fresh scale-[1.02]" : "bg-primary hover:opacity-90"
+                  maxCanAdd <= 0 && user
+                    ? "bg-muted text-muted-foreground cursor-not-allowed"
+                    : added
+                    ? "bg-fresh scale-[1.02]"
+                    : "bg-primary hover:opacity-90"
                 }`}
               >
-                {added ? (
+                {maxCanAdd <= 0 && user ? (
+                  "Maksimal miqdorga yetdi"
+                ) : added ? (
                   <>
                     <Check size={18} />
                     Qo'shildi ✓
@@ -145,7 +170,7 @@ const ProductDetailPage = () => {
                 ) : (
                   <>
                     <ShoppingCart size={18} />
-                    Savatchaga qo'shish
+                    {user ? "Savatchaga qo'shish" : "Kirish va buyurtma berish"}
                   </>
                 )}
               </button>

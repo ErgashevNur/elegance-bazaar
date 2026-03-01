@@ -1,19 +1,28 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Phone, User, CreditCard, CheckCircle2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, MapPin, User, CreditCard, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { formatPrice } from "@/data/products";
 import Layout from "@/components/Layout";
 import { toast } from "sonner";
 
 const CheckoutPage = () => {
   const { items, totalPrice, clearCart } = useCart();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [orderPlaced, setOrderPlaced] = useState(false);
 
+  // Auth guard
+  useEffect(() => {
+    if (!user) {
+      navigate("/login", { state: { from: "/checkout" }, replace: true });
+    }
+  }, [user, navigate]);
+
   const [form, setForm] = useState({
-    fullName: "",
+    fullName: user?.displayName || "",
     phone: "",
     region: "",
     address: "",
@@ -39,6 +48,8 @@ const CheckoutPage = () => {
     navigate("/cart");
     return null;
   }
+
+  if (!user) return null;
 
   if (orderPlaced) {
     return (
@@ -91,7 +102,6 @@ const CheckoutPage = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="grid gap-8 lg:grid-cols-3">
-            {/* Form */}
             <div className="lg:col-span-2 space-y-6">
               {/* Personal Info */}
               <div className="rounded-xl border border-border bg-card p-6 shadow-card">
@@ -102,25 +112,13 @@ const CheckoutPage = () => {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-foreground">To'liq ism *</label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={form.fullName}
-                      onChange={handleChange}
-                      placeholder="Ism Familiya"
-                      className="h-11 w-full rounded-lg border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
+                    <input type="text" name="fullName" value={form.fullName} onChange={handleChange} placeholder="Ism Familiya"
+                      className="h-11 w-full rounded-lg border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-foreground">Telefon raqam *</label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={form.phone}
-                      onChange={handleChange}
-                      placeholder="+998 90 123 45 67"
-                      className="h-11 w-full rounded-lg border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
+                    <input type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="+998 90 123 45 67"
+                      className="h-11 w-full rounded-lg border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
                   </div>
                 </div>
               </div>
@@ -134,12 +132,8 @@ const CheckoutPage = () => {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-foreground">Viloyat / Shahar *</label>
-                    <select
-                      name="region"
-                      value={form.region}
-                      onChange={handleChange}
-                      className="h-11 w-full rounded-lg border border-border bg-background px-4 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
+                    <select name="region" value={form.region} onChange={handleChange}
+                      className="h-11 w-full rounded-lg border border-border bg-background px-4 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary">
                       <option value="">Tanlang</option>
                       <option value="toshkent">Toshkent shahri</option>
                       <option value="toshkent_v">Toshkent viloyati</option>
@@ -159,26 +153,14 @@ const CheckoutPage = () => {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-medium text-foreground">Manzil *</label>
-                    <input
-                      type="text"
-                      name="address"
-                      value={form.address}
-                      onChange={handleChange}
-                      placeholder="Ko'cha, uy raqami"
-                      className="h-11 w-full rounded-lg border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                    />
+                    <input type="text" name="address" value={form.address} onChange={handleChange} placeholder="Ko'cha, uy raqami"
+                      className="h-11 w-full rounded-lg border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
                   </div>
                 </div>
                 <div className="mt-4">
                   <label className="mb-1.5 block text-sm font-medium text-foreground">Izoh (ixtiyoriy)</label>
-                  <textarea
-                    name="comment"
-                    value={form.comment}
-                    onChange={handleChange}
-                    rows={3}
-                    placeholder="Qo'shimcha izoh..."
-                    className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
-                  />
+                  <textarea name="comment" value={form.comment} onChange={handleChange} rows={3} placeholder="Qo'shimcha izoh..."
+                    className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
                 </div>
               </div>
 
@@ -194,22 +176,11 @@ const CheckoutPage = () => {
                     { value: "card", label: "Plastik karta", icon: "💳" },
                     { value: "transfer", label: "Pul o'tkazma", icon: "🏦" },
                   ].map((method) => (
-                    <label
-                      key={method.value}
+                    <label key={method.value}
                       className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 p-4 transition-all ${
-                        form.paymentMethod === method.value
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-muted-foreground/30"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value={method.value}
-                        checked={form.paymentMethod === method.value}
-                        onChange={handleChange}
-                        className="sr-only"
-                      />
+                        form.paymentMethod === method.value ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"
+                      }`}>
+                      <input type="radio" name="paymentMethod" value={method.value} checked={form.paymentMethod === method.value} onChange={handleChange} className="sr-only" />
                       <span className="text-2xl">{method.icon}</span>
                       <span className="text-sm font-medium text-foreground">{method.label}</span>
                     </label>
@@ -222,26 +193,18 @@ const CheckoutPage = () => {
             <div>
               <div className="sticky top-24 rounded-xl border border-border bg-card p-6 shadow-card">
                 <h3 className="mb-4 font-display text-lg font-bold text-foreground">Buyurtma tafsilotlari</h3>
-
                 <div className="mb-4 max-h-60 space-y-3 overflow-y-auto pr-1">
                   {items.map((item) => (
                     <div key={item.product.id} className="flex items-center gap-3">
-                      <img
-                        src={item.product.image}
-                        alt={item.product.name}
-                        className="h-12 w-12 rounded-lg object-cover"
-                      />
+                      <img src={item.product.image} alt={item.product.name} className="h-12 w-12 rounded-lg object-cover" />
                       <div className="flex-1 min-w-0">
                         <p className="truncate text-sm font-medium text-foreground">{item.product.name}</p>
                         <p className="text-xs text-muted-foreground">{item.quantity} × {formatPrice(item.product.price)}</p>
                       </div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {formatPrice(item.product.price * item.quantity)}
-                      </p>
+                      <p className="text-sm font-semibold text-foreground">{formatPrice(item.product.price * item.quantity)}</p>
                     </div>
                   ))}
                 </div>
-
                 <div className="space-y-2 border-t border-border pt-4 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Mahsulotlar</span>
@@ -256,17 +219,11 @@ const CheckoutPage = () => {
                     <span className="font-display text-lg font-bold text-foreground">{formatPrice(totalPrice)}</span>
                   </div>
                 </div>
-
-                <button
-                  type="submit"
-                  className="mt-6 flex h-12 w-full items-center justify-center rounded-xl bg-primary font-display text-sm font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
-                >
+                <button type="submit"
+                  className="mt-6 flex h-12 w-full items-center justify-center rounded-xl bg-primary font-display text-sm font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]">
                   Buyurtma berish
                 </button>
-
-                <p className="mt-3 text-center text-xs text-muted-foreground">
-                  Buyurtma tugmasi bosilgandan so'ng operator siz bilan bog'lanadi
-                </p>
+                <p className="mt-3 text-center text-xs text-muted-foreground">Buyurtma tugmasi bosilgandan so'ng operator siz bilan bog'lanadi</p>
               </div>
             </div>
           </div>
