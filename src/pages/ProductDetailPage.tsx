@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, ShoppingCart, Star, Truck, Shield, Minus, Plus } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Star, Truck, Shield, Minus, Plus, Check } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { products, formatPrice } from "@/data/products";
 import { useCart } from "@/context/CartContext";
@@ -12,6 +13,7 @@ const ProductDetailPage = () => {
   const product = products.find((p) => p.id === id);
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
+  const [added, setAdded] = useState(false);
 
   if (!product) {
     return (
@@ -33,6 +35,9 @@ const ProductDetailPage = () => {
     for (let i = 0; i < quantity; i++) {
       addToCart(product);
     }
+    setAdded(true);
+    toast.success(`"${product.name}" (${quantity} dona) savatchaga qo'shildi!`);
+    setTimeout(() => setAdded(false), 1500);
   };
 
   return (
@@ -128,10 +133,21 @@ const ProductDetailPage = () => {
 
               <button
                 onClick={handleAddToCart}
-                className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary font-display text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
+                className={`flex h-12 flex-1 items-center justify-center gap-2 rounded-xl font-display text-sm font-bold text-primary-foreground transition-all duration-300 ${
+                  added ? "bg-fresh scale-[1.02]" : "bg-primary hover:opacity-90"
+                }`}
               >
-                <ShoppingCart size={18} />
-                Savatchaga qo'shish
+                {added ? (
+                  <>
+                    <Check size={18} />
+                    Qo'shildi ✓
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart size={18} />
+                    Savatchaga qo'shish
+                  </>
+                )}
               </button>
             </div>
 
