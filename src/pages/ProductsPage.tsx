@@ -2,8 +2,9 @@ import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { SlidersHorizontal, Grid3X3, List } from "lucide-react";
 import { motion } from "framer-motion";
-import { products, categories } from "@/data/products";
+import { useProducts, useCategories } from "@/hooks/useProducts";
 import ProductCard from "@/components/ProductCard";
+import ProductsLoading from "@/components/ProductsLoading";
 import Layout from "@/components/Layout";
 
 const ProductsPage = () => {
@@ -11,6 +12,9 @@ const ProductsPage = () => {
   const activeCategory = searchParams.get("category") || "all";
   const [sortBy, setSortBy] = useState("default");
   const [view, setView] = useState<"grid" | "list">("grid");
+
+  const { products, loading } = useProducts();
+  const { categories } = useCategories();
 
   const filtered = useMemo(() => {
     let result = [...products];
@@ -21,7 +25,7 @@ const ProductsPage = () => {
     if (sortBy === "price-desc") result.sort((a, b) => b.price - a.price);
     if (sortBy === "rating") result.sort((a, b) => b.rating - a.rating);
     return result;
-  }, [activeCategory, sortBy]);
+  }, [activeCategory, sortBy, products]);
 
   const setCategory = (cat: string) => {
     if (cat === "all") {
@@ -35,7 +39,6 @@ const ProductsPage = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="font-display text-3xl font-bold text-foreground">Mahsulotlar</h1>
           <p className="mt-1 text-sm text-muted-foreground">{filtered.length} ta mahsulot topildi</p>
@@ -43,7 +46,6 @@ const ProductsPage = () => {
 
         {/* Filters */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          {/* Category pills */}
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setCategory("all")}
@@ -70,7 +72,6 @@ const ProductsPage = () => {
             ))}
           </div>
 
-          {/* Sort & View */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 rounded-lg border border-border px-3 py-2">
               <SlidersHorizontal size={14} className="text-muted-foreground" />
@@ -102,8 +103,10 @@ const ProductsPage = () => {
           </div>
         </div>
 
-        {/* Products Grid */}
-        {filtered.length > 0 ? (
+        {/* Products */}
+        {loading ? (
+          <ProductsLoading count={8} />
+        ) : filtered.length > 0 ? (
           <div
             className={
               view === "grid"
